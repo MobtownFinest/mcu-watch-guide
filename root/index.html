@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MCU Watch Order — Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b0b0d;
+    --panel:#151318;
+    --panel2:#1b181f;
+    --edge:#2a262f;
+    --paper:#f2ede4;
+    --dim:#9d968c;
+    --crimson:#e6303b;
+    --amber:#d4a24c;
+    --violet:#8b6df0;
+    --steel:#5fb4c9;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:52vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:7vh 6vw 5vh; position:relative;
+    background:radial-gradient(ellipse at 50% 0%, rgba(230,48,59,.16), transparent 60%);
+    border-bottom:1px solid var(--edge);
+  }
+  .hero .eyebrow{font-family:'JetBrains Mono',monospace;letter-spacing:.35em;font-size:.68rem;color:var(--amber);text-transform:uppercase;margin-bottom:1.2rem;}
+  .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,6rem);letter-spacing:.03em;line-height:.92;margin:0;text-shadow:0 0 40px rgba(230,48,59,.3);}
+  .hero h1 span{color:var(--crimson);}
+  .hero p{max-width:560px;color:var(--dim);font-size:.95rem;line-height:1.6;margin-top:1.2rem;}
+
+  /* ---------- STICKY TOOLBAR ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:30;
+    background:rgba(11,11,13,.92); backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--edge);
+    padding:.9rem 1.2rem;
+  }
+  .toolbar-inner{max-width:900px;margin:0 auto;}
+  .progress-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;}
+  .progress-track{flex:1;height:7px;background:var(--panel2);border-radius:99px;overflow:hidden;}
+  .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--crimson),#ff7a54);transition:width .35s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--dim);white-space:nowrap;}
+  .controls-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+  .search-box{
+    flex:1; min-width:140px;
+    background:var(--panel2); border:1px solid var(--edge); color:var(--paper);
+    border-radius:8px; padding:.45rem .7rem; font-family:'Inter',sans-serif; font-size:.82rem; outline:none;
+  }
+  .search-box::placeholder{color:var(--dim);}
+  .filter-btn{
+    font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase;
+    background:var(--panel2); border:1px solid var(--edge); color:var(--dim);
+    border-radius:999px; padding:.4rem .8rem; cursor:pointer; transition:.15s;
+  }
+  .filter-btn:hover{border-color:var(--crimson);color:var(--paper);}
+  .filter-btn.active{background:var(--crimson);border-color:var(--crimson);color:#fff;}
+  .reset-btn{
+    font-family:'JetBrains Mono',monospace; font-size:.68rem; text-transform:uppercase;
+    background:transparent; border:1px solid var(--edge); color:var(--dim);
+    border-radius:999px; padding:.4rem .8rem; cursor:pointer; margin-left:auto;
+  }
+  .reset-btn:hover{border-color:var(--amber);color:var(--amber);}
+  .save-note{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--dim);text-align:right;margin-top:.4rem;min-height:1em;}
+
+  /* ---------- LEGEND ---------- */
+  .legend{max-width:900px;margin:2.2rem auto 0;padding:0 1.2rem;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.04em;padding:.3rem .65rem;border-radius:999px;border:1px solid var(--edge);color:var(--dim);display:flex;align-items:center;gap:.4rem;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+
+  /* ---------- MAIN ---------- */
+  main{max-width:900px;margin:0 auto;padding:3rem 1.2rem 6rem;position:relative;}
+  .rail{position:absolute;left:22px;top:0;bottom:0;width:2px;background:var(--edge);z-index:0;}
+
+  .saga-header{position:relative;z-index:1;margin:4rem 0 1.6rem;padding-left:52px;}
+  .saga-header:first-of-type{margin-top:0;}
+  .saga-header .kicker{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.2em;color:var(--crimson);text-transform:uppercase;}
+  .saga-header h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,5vw,2.6rem);letter-spacing:.03em;margin:.2rem 0 0;}
+
+  .entry{
+    position:relative; z-index:1;
+    display:flex; align-items:flex-start; gap:.9rem;
+    padding:.85rem .9rem .85rem 0;
+    margin-left:0;
+    border-bottom:1px solid var(--edge);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .entry:hover{background:linear-gradient(90deg, rgba(230,48,59,.06), transparent);}
+  .entry.done{opacity:.42;}
+  .entry.done h3{text-decoration:line-through;}
+  .entry.hidden{display:none;}
+
+  .check-wrap{position:relative;flex-shrink:0;padding-left:8px;padding-top:.15rem;}
+  .check-wrap input{position:absolute;opacity:0;width:28px;height:28px;cursor:pointer;}
+  .custom-check{
+    width:28px;height:28px;border-radius:8px;border:2px solid var(--edge);
+    display:grid;place-items:center;color:transparent;font-weight:800;font-size:.9rem;
+    background:var(--panel2); transition:.15s;
+  }
+  .check-wrap input:checked + .custom-check{background:var(--crimson);border-color:var(--crimson);color:#fff;}
+
+  .num{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#57525c;flex-shrink:0;width:24px;padding-top:.3rem;text-align:right;}
+
+  .content{flex:1;min-width:0;}
+  .meta-row{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.25rem;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;padding:.15rem .4rem;border-radius:999px;border:1px solid var(--edge);color:var(--dim);}
+  .pill.essential{border-color:#7a2226;color:#ff9498;}
+  .pill.recommended{border-color:#6b551c;color:#f0cf74;}
+  .pill.optional{border-color:#274d5f;color:#8dd6f2;}
+  .pill.date{margin-left:auto;border:none;color:var(--dim);padding-left:0;}
+  .content h3{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.01em;margin:.1rem 0 .3rem;line-height:1.05;}
+  .badges{display:flex;flex-wrap:wrap;gap:.3rem;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.03em;padding:.15rem .45rem;border-radius:5px;}
+  .badge.disney{background:rgba(95,180,201,.12);color:var(--steel);border:1px solid rgba(95,180,201,.35);}
+  .badge.sony{background:rgba(230,48,59,.12);color:var(--crimson);border:1px solid rgba(230,48,59,.35);}
+  .badge.legacy{background:rgba(212,162,76,.12);color:var(--amber);border:1px solid rgba(212,162,76,.35);}
+
+  /* ---------- CALLOUTS ---------- */
+  .callout{max-width:900px;margin:2.4rem auto 0;padding:1.2rem 1.4rem;background:var(--panel);border:1px solid var(--edge);border-radius:12px;}
+  .callout h4{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--amber);margin:0 0 .5rem;letter-spacing:.02em;}
+  .callout p, .callout ol{color:var(--dim);font-size:.85rem;line-height:1.6;margin:0;}
+  .callout ol{padding-left:1.2rem;}
+
+  footer{text-align:center;color:#5c5763;font-size:.72rem;padding:3rem 1rem;font-family:'JetBrains Mono',monospace;}
+
+  @media(max-width:640px){
+    .rail{left:12px;}
+    .saga-header{padding-left:34px;}
+    .entry{gap:.6rem;}
+    .num{display:none;}
+    .pill.date{width:100%;margin-left:0;order:99;}
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="eyebrow">Reel 002 — Tracker Cut</div>
+  <h1>THE <span>MCU</span><br>WATCH ORDER</h1>
+  <p>Every Marvel Studios film, Disney+ series, and canon special, in release order. Check things off as you go — it saves automatically.</p>
+</section>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-bar" id="bar"></div></div>
+      <div class="progress-text" id="progressText">0 / 0 watched</div>
+    </div>
+    <div class="controls-row">
+      <input class="search-box" id="search" placeholder="Search titles…">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="essential">Essential</button>
+      <button class="filter-btn" data-filter="Movie">Movies</button>
+      <button class="filter-btn" data-filter="Series">Series</button>
+      <button class="filter-btn" data-filter="hide-optional">Hide optional</button>
+      <button class="reset-btn" id="resetBtn">Reset progress</button>
+    </div>
+    <div class="save-note" id="saveNote"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="chip"><span class="dot" style="background:#ff9498"></span>Essential — main story path</span>
+  <span class="chip"><span class="dot" style="background:#f0cf74"></span>Recommended — good context</span>
+  <span class="chip"><span class="dot" style="background:#8dd6f2"></span>Optional — skippable</span>
+  <span class="chip"><span class="dot" style="background:var(--steel)"></span>Disney+</span>
+  <span class="chip"><span class="dot" style="background:var(--crimson)"></span>Sony / off Disney+</span>
+  <span class="chip"><span class="dot" style="background:var(--amber)"></span>Legacy Netflix show</span>
+</div>
+
+<main>
+  <div class="rail"></div>
+  <div id="timeline"></div>
+</main>
+
+<div class="callout">
+  <h4>Daredevil prep before Born Again</h4>
+  <p>For the full emotional payoff, slot this legacy mini-marathon in right before <em>Daredevil: Born Again</em>:</p>
+  <ol><li>Daredevil — Season 1</li><li>Daredevil — Season 2</li><li>The Defenders</li><li>Daredevil — Season 3</li></ol>
+</div>
+<div class="callout">
+  <h4>The Sony situation</h4>
+  <p>Homecoming, Far From Home, No Way Home, and Brand New Day are MCU canon but Sony controls distribution — they rotate on and off Disney+ (historically Netflix, then Starz) instead of living there permanently. They still belong exactly where they're placed in the order. Sony's Venom/Morbius/Madame Web/Kraven universe is <strong>not</strong> MCU canon and isn't included here.</p>
+</div>
+
+<footer>Fan-made viewing guide. Marvel and all related marks belong to their respective owners. Progress is saved to your account, not shared with anyone else.</footer>
+
+<script>
+const DATA = [
+  {saga:"Infinity Saga", kicker:"Phase One", title:"The road to The Avengers", items:[
+    {t:"Iron Man", y:"May 2008", k:"Movie", p:"essential", b:["disney"]},
+    {t:"The Incredible Hulk", y:"Jun 2008", k:"Movie", p:"recommended", b:["sony"]},
+    {t:"Iron Man 2", y:"May 2010", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Thor", y:"May 2011", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Captain America: The First Avenger", y:"Jul 2011", k:"Movie", p:"essential", b:["disney"]},
+    {t:"The Avengers", y:"May 2012", k:"Movie", p:"essential", b:["disney"]},
+  ]},
+  {saga:"Infinity Saga", kicker:"Phase Two", title:"Building the bigger picture", items:[
+    {t:"Iron Man 3", y:"May 2013", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Thor: The Dark World", y:"Nov 2013", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Captain America: The Winter Soldier", y:"Apr 2014", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Guardians of the Galaxy", y:"Aug 2014", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Avengers: Age of Ultron", y:"May 2015", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Ant-Man", y:"Jul 2015", k:"Movie", p:"recommended", b:["disney"]},
+  ]},
+  {saga:"Infinity Saga", kicker:"Phase Three", title:"Civil War to the Snap and back", items:[
+    {t:"Captain America: Civil War", y:"May 2016", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Doctor Strange", y:"Nov 2016", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Guardians of the Galaxy Vol. 2", y:"May 2017", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Spider-Man: Homecoming", y:"Jul 2017", k:"Movie", p:"recommended", b:["sony"]},
+    {t:"Thor: Ragnarok", y:"Nov 2017", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Black Panther", y:"Feb 2018", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Avengers: Infinity War", y:"Apr 2018", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Ant-Man and the Wasp", y:"Jul 2018", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Captain Marvel", y:"Mar 2019", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Avengers: Endgame", y:"Apr 2019", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Spider-Man: Far From Home", y:"Jul 2019", k:"Movie", p:"recommended", b:["sony"]},
+  ]},
+  {saga:"Multiverse Saga", kicker:"Phase Four", title:"WandaVision to Wakanda Forever", items:[
+    {t:"WandaVision", y:"2021", k:"Series", p:"essential", b:["disney"]},
+    {t:"The Falcon and the Winter Soldier", y:"2021", k:"Series", p:"recommended", b:["disney"]},
+    {t:"Loki — Season 1", y:"2021", k:"Series", p:"essential", b:["disney"]},
+    {t:"Black Widow", y:"Jul 2021", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"What If…? — Season 1", y:"2021", k:"Series", p:"recommended", b:["disney"]},
+    {t:"Shang-Chi and the Legend of the Ten Rings", y:"Sep 2021", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Eternals", y:"Nov 2021", k:"Movie", p:"optional", b:["disney"]},
+    {t:"Hawkeye", y:"2021", k:"Series", p:"recommended", b:["disney"]},
+    {t:"Spider-Man: No Way Home", y:"Dec 2021", k:"Movie", p:"essential", b:["sony"]},
+    {t:"Moon Knight", y:"2022", k:"Series", p:"optional", b:["disney"]},
+    {t:"Doctor Strange in the Multiverse of Madness", y:"May 2022", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Ms. Marvel", y:"2022", k:"Series", p:"optional", b:["disney"]},
+    {t:"Thor: Love and Thunder", y:"Jul 2022", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"She-Hulk: Attorney at Law", y:"2022", k:"Series", p:"optional", b:["disney"]},
+    {t:"Werewolf by Night", y:"Oct 2022", k:"Special", p:"optional", b:["disney"]},
+    {t:"Black Panther: Wakanda Forever", y:"Nov 2022", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"The Guardians of the Galaxy Holiday Special", y:"Nov 2022", k:"Special", p:"optional", b:["disney"]},
+  ]},
+  {saga:"Multiverse Saga", kicker:"Phase Five", title:"Quantumania to First Steps", items:[
+    {t:"Ant-Man and the Wasp: Quantumania", y:"Feb 2023", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Secret Invasion", y:"2023", k:"Series", p:"optional", b:["disney"]},
+    {t:"Guardians of the Galaxy Vol. 3", y:"May 2023", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Loki — Season 2", y:"2023", k:"Series", p:"essential", b:["disney"]},
+    {t:"The Marvels", y:"Nov 2023", k:"Movie", p:"recommended", b:["disney"]},
+    {t:"Echo", y:"Jan 2024", k:"Series", p:"optional", b:["disney"]},
+    {t:"Agatha All Along", y:"2024", k:"Series", p:"recommended", b:["disney"]},
+    {t:"Deadpool & Wolverine", y:"Jul 2024", k:"Movie", p:"essential", b:["disney"]},
+    {t:"What If…? — Seasons 2–3", y:"2024", k:"Series", p:"optional", b:["disney"]},
+    {t:"Daredevil: Born Again", y:"2025", k:"Series", p:"essential", b:["disney","legacy"]},
+    {t:"Captain America: Brave New World", y:"Feb 2025", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Thunderbolts*", y:"May 2025", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Ironheart", y:"Jun 2025", k:"Series", p:"recommended", b:["disney"]},
+    {t:"The Fantastic Four: First Steps", y:"Jul 2025", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Eyes of Wakanda", y:"Aug 2025", k:"Animated", p:"optional", b:["disney"]},
+    {t:"Marvel Zombies", y:"Oct 2025", k:"Animated", p:"optional", b:["disney"]},
+  ]},
+  {saga:"Multiverse Saga", kicker:"Phase Six", title:"Brand New Day to Secret Wars", items:[
+    {t:"Wonder Man — Season 1", y:"2026", k:"Series", p:"essential", b:["disney"]},
+    {t:"Daredevil: Born Again — Season 2", y:"2026", k:"Series", p:"essential", b:["disney"]},
+    {t:"The Punisher: One Last Kill", y:"May 2026", k:"Special", p:"recommended", b:["disney","legacy"]},
+    {t:"X-Men '97 — Season 2", y:"Jul 2026", k:"Animated", p:"optional", b:["disney"]},
+    {t:"Spider-Man: Brand New Day", y:"Jul 31, 2026", k:"Movie", p:"essential", b:["sony"]},
+    {t:"Avengers: Doomsday", y:"Dec 18, 2026", k:"Movie", p:"essential", b:["disney"]},
+    {t:"Avengers: Secret Wars", y:"Dec 17, 2027", k:"Movie", p:"essential", b:["disney"]},
+  ]},
+];
+
+const timeline = document.getElementById('timeline');
+let counter = 0;
+const flat = [];
+
+DATA.forEach(section => {
+  const header = document.createElement('div');
+  header.className = 'saga-header';
+  header.innerHTML = `<div class="kicker">${section.saga} · ${section.kicker}</div><h2>${section.title}</h2>`;
+  timeline.appendChild(header);
+
+  section.items.forEach(item => {
+    counter++;
+    const id = 'mcu-' + counter;
+    flat.push(id);
+
+    const badgeMap = {
+      disney: '<span class="badge disney">Disney+</span>',
+      sony: '<span class="badge sony">Sony / off Disney+</span>',
+      legacy: '<span class="badge legacy">Legacy Netflix</span>',
+    };
+    const badges = item.b.map(x => badgeMap[x]).join('');
+
+    const entry = document.createElement('article');
+    entry.className = 'entry';
+    entry.dataset.id = id;
+    entry.dataset.type = item.k;
+    entry.dataset.priority = item.p;
+    entry.dataset.search = item.t.toLowerCase();
+
+    entry.innerHTML = `
+      <label class="check-wrap">
+        <input type="checkbox" data-id="${id}">
+        <span class="custom-check">✓</span>
+      </label>
+      <div class="num">${String(counter).padStart(2,'0')}</div>
+      <div class="content">
+        <div class="meta-row">
+          <span class="pill">${item.k}</span>
+          <span class="pill ${item.p}">${item.p}</span>
+          <span class="pill date">${item.y}</span>
+        </div>
+        <h3>${item.t}</h3>
+        <div class="badges">${badges}</div>
+      </div>
+    `;
+    timeline.appendChild(entry);
+  });
+});
+
+const bar = document.getElementById('bar');
+const progressText = document.getElementById('progressText');
+const saveNote = document.getElementById('saveNote');
+const boxes = () => [...document.querySelectorAll('input[type="checkbox"]')];
+
+let watched = new Set();
+const STORAGE_KEY = 'mcu-watched-ids';
+
+function renderProgress(){
+  const done = boxes().filter(b => b.checked).length;
+  const total = boxes().length;
+  bar.style.width = (total ? (done/total*100) : 0) + '%';
+  progressText.textContent = `${done} / ${total} watched`;
+}
+
+async function loadProgress(){
+  try{
+    const result = await window.storage.get(STORAGE_KEY, false);
+    if(result && result.value){
+      watched = new Set(JSON.parse(result.value));
+    }
+  }catch(e){
+    watched = new Set();
+  }
+  boxes().forEach(b => {
+    const on = watched.has(b.dataset.id);
+    b.checked = on;
+    b.closest('.entry').classList.toggle('done', on);
+  });
+  renderProgress();
+}
+
+async function saveProgress(){
+  saveNote.textContent = 'Saving…';
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify([...watched]), false);
+    saveNote.textContent = 'Saved ✓';
+    setTimeout(()=>{ if(saveNote.textContent==='Saved ✓') saveNote.textContent=''; }, 1500);
+  }catch(e){
+    saveNote.textContent = 'Save failed — check your connection and try again.';
+  }
+}
+
+boxes().forEach(b => {
+  b.addEventListener('change', () => {
+    if(b.checked) watched.add(b.dataset.id); else watched.delete(b.dataset.id);
+    b.closest('.entry').classList.toggle('done', b.checked);
+    renderProgress();
+    saveProgress();
+  });
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    document.querySelectorAll('.entry').forEach(e => {
+      let show = true;
+      if(f === 'essential') show = e.dataset.priority === 'essential';
+      else if(f === 'Movie' || f === 'Series') show = e.dataset.type === f;
+      else if(f === 'hide-optional') show = e.dataset.priority !== 'optional';
+      e.classList.toggle('hidden', !show);
+    });
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.entry').forEach(x => {
+    x.classList.toggle('hidden', q.length > 0 && !x.dataset.search.includes(q));
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if(!confirm('Clear all watched progress? This cannot be undone.')) return;
+  watched = new Set();
+  boxes().forEach(b => { b.checked = false; b.closest('.entry').classList.remove('done'); });
+  renderProgress();
+  await saveProgress();
+});
+
+loadProgress();
+</script>
+
+</body>
+</html>
